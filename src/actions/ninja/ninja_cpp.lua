@@ -78,7 +78,7 @@ local p     = premake
 		_p("")
 
 		if #cfg.prebuildcommands > 0 then
-			_p("build __prebuildcommands: exec")
+			_p("build " .. cpp.prebuildname(prj) .. ": exec")
 			_p(1, 'command = echo Running pre-build commands && ' .. table.implode(cfg.prebuildcommands, "", "", " && "))
 			_p(1, "type = pre-build")
 			_p("")
@@ -122,7 +122,7 @@ local p     = premake
 		local command_by_name = {}
 		local command_files = {}
 
-		local prebuildsuffix = #cfg.prebuildcommands > 0 and "||__prebuildcommands" or ""
+		local prebuildsuffix = #cfg.prebuildcommands > 0 and "||" .. cpp.prebuildname(prj) or ""
 
 		for _, custombuildtask in ipairs(prj.custombuildtask or {}) do
 			for _, buildtask in ipairs(custombuildtask or {}) do
@@ -227,7 +227,7 @@ local p     = premake
 					if order_deps[objfilename] == nil then
 						order_deps[objfilename] = {}
 					end
-					table.insert(order_deps[objfilename], '__prebuildcommands')
+					table.insert(order_deps[objfilename], cpp.prebuildname(prj))
 				end
 			end
 			if path.issourcefile(file) then
@@ -253,6 +253,10 @@ local p     = premake
 		cfg.extra_deps = extra_deps
 		cfg.order_deps = order_deps
 		cfg.extra_flags = extra_flags
+	end
+
+	function cpp.prebuildname(prj)
+		return prj.name:gsub(" ", "$ ") .. "__prebuildcommands"
 	end
 
 	function cpp.objectname(cfg, file)
@@ -318,7 +322,7 @@ local p     = premake
 		local lddeps      = ninja.list(premake.getlinks(cfg, "siblings", "fullpath"))
 		local libs        = lddeps .. " " .. ninja.list(tool.getlinkflags(cfg))
 
-		local prebuildsuffix = #cfg.prebuildcommands > 0 and "||__prebuildcommands" or ""
+		local prebuildsuffix = #cfg.prebuildcommands > 0 and "||" .. cpp.prebuildname(prj) or ""
 
 		local function writevars()
 			_p(1, "all_ldflags = " .. all_ldflags)
